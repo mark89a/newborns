@@ -1,9 +1,9 @@
 #1) 
-#IMPORTAZIONE DATI  
-neonati=read.csv("neonati.csv", sep = ",", stringsAsFactors = T) 
-nrow(neonati)
-attach(neonati)
-summary(neonati)
+#DATA IMPORT 
+newborns=read.csv("neonati.csv", sep = ",", stringsAsFactors = T) 
+nrow(newborns)
+attach(newborns)
+summary(newborns)
 library(moments)
 library(dplyr)
 library(ggplot2)
@@ -15,303 +15,303 @@ library(plotly)
 library(rgl)
 #------------------------------------------------------------------------------------------------------------------
 
-#dopo aver fatto l'analisi dei residui, rileviamo che ci sono outliers rilevanti nella riga 1551, 
-#torniamo qui dunque per eliminare questa riga
+#after having done the analysis of the residuals, we find that there are relevant outliers in line 1551
+#let's return here to delete this line
 
-righe_da_eliminare=c(1551)
-neonati <- neonati %>% filter(!(row_number() %in% righe_da_eliminare))
-
-
+lines_to_delete=c(1551)
+newborns <- newborns %>% filter(!(row_number() %in% lines_to_delete))
 
 
-#Ho rilevato due anomali nell'età della madre, dove vengono indicate 0 e 1 anno come
-#età della madre, così ho rimosso quelle informazioni
 
-righe_anomale <- which(neonati$Anni.madre <2)
-neonati_clean <- subset(neonati, !rownames(neonati) %in% righe_anomale)
-neonati <- neonati_clean
 
-attach(neonati_clean)
-summary(neonati)
-nrow(neonati)
+#I detected two anomalies in the mother's age, where 0 and 1 year are indicated as mother's age, so I removed that information
+
+anomalous_lines <- which(newborns$Anni.madre <2)
+newborns_clean <- subset(newborns, !rownames(newborns) %in% anomalous_lines)
+newborns <- newborns_clean
+
+attach(newborns_clean)
+summary(newborns)
+nrow(newborns)
 
 
 #----------------------------------------------------------------------------------------------------------
 
 #2)
-#DESCRIZIONE DATASET
-#Il dataset contiene 10 variabili: 
-#L'età della madre dei neonati del campione, variabile quantitativa discreta
-#Il numero di gravidanze, anch'essa variabile quantitativa discreta
-#Madre fumatrice oppure no. Si tratta di una variabile dummy a cui al SI viene attribuito il valore di 1
-#e al NO il valore di 0.
-fumatrici=sum(neonati$Fumatrici)
-n=length(neonati$Fumatrici)
-non_fumatrici=n-fumatrici
-#Le madri fumatrici risultano essere 104, le non fumatrici sono 2394
-#Il periodo di gestazione in settimane, variabile quantitativa discreta
-#Il peso del neonato, variabile quantitativa continua
-#La lunghezza, variabile quantitativa continua
-#Il diametro del cranio, variabile quantitiva continua
-#il tipo di parto è una variabile qualitativa su scala nominale, con modalità Naturale o Cesareo
-table(Tipo.parto)
-percentuale_ces=728/n
-percentuale_ces
-percentuale_nat=1772/n
-#con table di Tipo.parto vediamo che nel campione, 728 donne hanno praticato il parto cesareo (29.14%)
-#mentre 1770 hanno fatto il parto naturale (70.93%)
-#La variabile ospedale riguarda gli ospedali in cui sono avvenuti i parti
-ospedale=table(Ospedale)
-mean(ospedale)
-#Table di Ospedale ci dice che i parti sono avvenuti in 3 ospedali con una media di 833 nascite ad ospedale
-#Il sesso indica chiaramente il sesso dei neonati
-sesso=table(Sesso)
-sesso
-#Nel campione ci sono 1255 femmine e 1243 maschi
-#Lo studio è finalizzato a verificare se le variabili registrate possano influenzarsi l'una con l'altra,
-#ad esempio se il fatto che la madre sia fumatrice, possa influenzare altre variabili, come il periodo di
-#gestazione, il peso, le dimensioni o addirittura il sesso del neonato. Stessa considerazione si può fare
-#per gli anni della madre o per il numero di gravidanze, ipotizzando che questi fattori possano influenzare
-#le caratteristiche del neonato. Inoltre lo studio vuole creare un modello di regressione che contenga le
-#variabili significative ed influenti in grado di fare previsioni sulle caratteristiche del nascituro.
+# DATASET DESCRIPTION
+#The dataset has 10 variables: 
+#The age of the mother of the newborns in the sample, a discrete quantitative variable
+#The number of pregnancies, also a discrete quantitative variable
+#Mother smoker or not. This is a dummy variable to which the SI is assigned the value of 1 and NO the value of 0
 
+smokers=sum(newborns$Fumatrici)
+n=length(newborns$Fumatrici)
+non_snokers=n-smokers
+#There are 104 smoking mothers and 2394 non-smoking mothers
+#The gestation period in weeks, a discrete quantitative variable
+#The weight of the newborn, a continuous quantitative variable
+#Length, continuous quantitative variable
+#The diameter of the skull, continuous quantitative variable
+#the type of birth is a qualitative variable on a nominal scale, with Natural or Cesarean mode
+table(Tipo.parto)
+percentage_ces=728/n
+percentage_ces
+percentage_nat=1772/n
+#with the Tipo.parto table we see that in the sample, 728 women performed cesarean section (29.14%)
+#while 1770 had a natural birth (70.93%)
+#The hospital variable concerns the hospitals in which the births took place
+hospital=table(Ospedale)
+mean(hospital)
+#hospital Table tells us that the births took place in 3 hospitals with an average of 833 births per hospital
+#"sesso" indicates the gender of newborns
+gender=table(Sesso)
+gender
+#In the sample there are 1255 females and 1243 males
+#The study aims to verify whether the recorded variables can influence each other,
+#for example whether the fact that the mother is a smoker can influence other variables, such as the period of
+#gestation, the weight, size or even sex of the newborn. The same consideration can be made
+#for the mother's years or for the number of pregnancies, assuming that these factors can influence
+#the characteristics of the newborn. Furthermore, the study wants to create a regression model that contains the
+#Significant and influential #variables capable of making predictions on the characteristics of the unborn child.
 #----------------------------------------------------------------------------------------------------------------------------
 
-#3) ANALISI DESCRITTIVA
-#PESO
+#3) DESCRIPTIVE ANALYSIS
+#WEIGHT
 View(table(Peso))
 skewness(Peso)
 kurtosis(Peso)
 plot(density(Peso))
 
-interruzioni_peso=c(800, 1600, 2400, 3200, 4000, max(Peso) )
-etichette_peso=c( "tra 0.8 kg e 1.6 kg", 
-                  "tra 1.6 kg e 2.4 kg", "tra 2.4 kg e 3.2 kg",
-                  "tra 3.2 kg e 4 kg", " + di 4 kg")
+range_weight=c(800, 1600, 2400, 3200, 4000, max(Peso) )
+weight_labels=c( "0.8 kg - 1.6 kg", 
+                  "1.6 kg - 2.4 kg", "2.4 kg - 3.2 kg",
+                  "3.2 kg - 4 kg", " + 4 kg")
 
-peso_cl=cut(Peso, breaks = interruzioni_peso, labels = etichette_peso)
-table(peso_cl)
+weight_cl=cut(Peso, breaks = range_weight, labels = labels_peso)
+table(weight_cl)
 
 library(ggplot2)
-ggplot(data=neonati_clean)+
+ggplot(data=newborns_clean)+
   geom_bar(aes(x=peso_cl),
            col="black",
            fill="lightblue")+
-  labs(title = "Distribuzione del peso dei neonati",
-       x="Classi di peso",
-       y="Numero di osservazioni rilevate")
+  labs(title = "Weight distribution of newborns",
+       x="Weight classes",
+       y="Observations number")
  
-#dopo aver diviso la variabile peso in classi, vediamo che la classe modale è quella
-#che tra i 3.2 e i 4 kg con 1277 osservazioni, mentre la classe con meno osserevazioni
-#è quella dei neonati tra 0.8 e 1.6 kg.
-#La media del peso è pari a 3284, la mediana è 3300, così come la moda.
-#la distribuzione del peso risulta leggermente asimmetrica negativa (media<mediana=moda) )
-#e leptocurtica.           
+#after dividing the weight variable into classes, we see that the modal class is that
+#which between 3.2 and 4 kg with 1277 observations, while the class with fewer observations
+#is that of newborns between 0.8 and 1.6 kg.
+#The average weight is 3284, the median is 3300, as is the mode.
+#the weight distribution is slightly negative asymmetric (mean<median=mode) )
+#and leptokurtic.
 
-#LUNGHEZZA
+    
+
+#LENGTH
 View(table(Lunghezza))
 skewness(Lunghezza)
 kurtosis(Lunghezza)
 plot(density(Lunghezza))
 
-interruzioni_lunghezza=c(300, 350, 400, 450, 500, max(Peso) )
-etichette_lunghezza=c( "tra 300 mm e 350 mm", 
-                  "tra 350 mm e 400 mm", "tra 400 mm e 450 mm",
-                  " tra 450 mm e 500 mm", "+ di 500 mm")
+range_length=c(300, 350, 400, 450, 500, max(Lunghezza) )
+labels_length=c( "300 mm - 350 mm", 
+                  "350 mm - 400 mm", "400 mm - 450 mm",
+                  "450 mm - 500 mm", "+ 500 mm")
 
-lunghezza_cl=cut(Lunghezza, breaks = interruzioni_lunghezza, labels = etichette_lunghezza)
-table(lunghezza_cl)
+length_cl=cut(Lunghezza, breaks = range_length, labels = labels_length)
+table(length_cl)
 
 library(ggplot2)
 ggplot(data=neonati)+
-  geom_bar(aes(x=lunghezza_cl),
+  geom_bar(aes(x=length_cl),
            col="black",
            fill="lightblue")+
-  labs(title = "Distribuzione della lunghezza dei neonati",
-       x="Classi di lunghezza",
-       y="Numero di osservazioni rilevate")  
+  labs(title = "Length distribution of newborns",
+       x="Length classes",
+       y="Observations number")  
   
-#anche la lunghezza è asimmetrica negativa e leptocurtica. La media è 494.7 mm, la mediana
-#è 500 mm e la moda è anche 500 mm.
-#la classe con il maggior numero di osservazioni rilevate è infatti quella dei
-#neonati con lunghezza compresa tra i 450 e i 500 mm, con 1465 osservazioni, 
-#anche se si rilevano numerose osservazioni nella classe con lunghezza maggiore
-#di 500 mm
+#the length is also negative asymmetric and leptokurtic. The mean is 494.7 mm, the median
+#is 500mm and fashion is also 500mm.
+#the class with the highest number of observations detected is in fact that of
+#newborns with length between 450 and 500 mm, with 1465 observations,
+#even if numerous observations are found in the class with the longest length
+#of 500 mm
 
-#DIAMETRO CRANIO
+#SKULL DIAMETER
 View(table(Cranio))
 skewness(Cranio)
 kurtosis(Cranio)
 plot(density(Cranio))
 
-interruzioni_cranio=c(200, 250, 300, 350, 400)
-etichette_cranio=c( "tra 200 mm e 250 mm", 
-                       "tra 250 mm e 300 mm", "tra 300 mm e 350 mm",
-                       " tra 350 mm e 400 mm")
+range_skull=c(200, 250, 300, 350, 400)
+labels_skull=c( "200 mm - 250 mm", 
+                       "250 mm - 300 mm", "300 mm - 350 mm",
+                       " 350 mm - 400 mm")
 
-cranio_cl=cut(Cranio, breaks = interruzioni_cranio, labels = etichette_cranio)
-table(cranio_cl)
+skull_cl=cut(Cranio, breaks = range_skull, labels = labels_skull)
+table(skull_cl)
 
 
 ggplot(data=neonati)+
   geom_bar(aes(x=cranio_cl),
            col="black",
            fill="lightblue")+
-  labs(title = "Distribuzione del diametro del cranio dei neonati",
-       x="Classi di diametro",
-       y="Numero di osservazioni rilevate")  
+  labs(title = "Skull diameter distribution of newborns",
+       x="Skull diameter classes",
+       y="Observations number")  
 
-#per il diametro del cranio la distribuzione è piuttosto simmetrica, media, mediana
-#e moda sono uguali, ossia 340 mm.
-#La classe modale è quella che comprende i bambini con un cranio tra 300 e 350 mm
+#for the diameter of the skull the distribution is rather symmetrical, average, median
+#and fashion are the same, i.e. 340 mm.
+#The modal class is the one that includes children with a skull between 300 and 350 mm
 
-#Analisi grafica del peso in relazione agli anni della madre e al tipo di parto
+#Graphical analysis of weight in relation to the mother's age and the type of birth
 
-
-ggplot(data = neonati) +
+ggplot(data = newborns) +
   geom_point(aes(x = Peso, y = Anni.madre, color = Tipo.parto)) +
-  labs(title = "Relazione Anni Madre - Peso - Tipo Parto",
-       x = "Peso", y = "Anni madre") +
+  labs(title = "Mother's age - weight - type of birth",
+       x = "Weight", y = "Mother's age") +
   scale_color_manual(values = c("Nat" = "blue", "Ces" = "red"),
-                     labels = c("Parto Naturale", "Cesareo"))
+                     labels = c("Natural", "Cesarean"))
 
 
 
-#A prima vista dallo scatterplot che relaziona gli anni della madre con il peso del neonato
-#non sembra esserci una relazione consistente tra gli anni della madre e il peso del
-#bambino, a prescindere dall'età della madre, il peso non sembra risentirne
-#particolarmente. 
-modello_peso_anni.madre <- lm(Peso~Anni.madre, neonati)
-risultato_Anova=Anova(modello_peso_anni.madre)
-print(risultato_Anova)
-#anche il test Anova conferma che non c'è relazione significativa tra peso del neonato e anni della madre
-#in quanto il test Anova che relaziona peso e anni della madre restituisce un p-value di 0.234
+#At first glance from the scatterplot that relates the mother's age to the weight of the newborn
+#there does not appear to be a consistent relationship between the mother's age and the weight of
+#baby, regardless of the mother's age, the weight does not seem to be affected
+#particularly.
+model_weight_mother <- lm(Peso~Anni.madre, newborns)
+Anova_result=Anova(model_weight_mother)
+print(Anova_result)
+#also the Anova test confirms that there is no significant relationship between the weight of the newborn and the mother's age
+#since the Anova test relating the mother's weight and age returns a p-value of 0.234
 
-#Analisi grafica del peso in relazione alle settimane di gestazione e al tipo di parto
+#Graphic analysis of weight in relation to weeks of gestation and type of birth
+
 ggplot(neonati, aes(x = factor(Gestazione), y = Peso, fill=Tipo.parto)) +
   geom_boxplot()+
-  xlab("Settimane di gestazione") +
-  ylab("Peso dei neonati in grammi") +
-  ggtitle("Relazione tra peso dei neonati, settimane di gestazione")
+  xlab("Gestation weeks") +
+  ylab("Newborns weight in g") +
+  ggtitle("Newborns weight - gestation weeks")
 
-modello_peso_gestazione <- lm(Peso~Gestazione, neonati)
-risultato_Anova_gest=Anova(modello_peso_gestazione)
-print(risultato_Anova_gest)
-#mettendo in correlazione grafica le settimane di gestaione con il peso vediamo 
-#come al crescere delle settimane di gestazione, il peso del neonato cresce, il peso
-#mediano è sempre maggiore al crescere delle settimane.Non sembrano esserci sostanziali
-#differenze di peso tra parti naturali e cesarei. I parti prematuri avvengono tutti
-#naturalmente fino alle 30 settimane
-#A conferma dell'analisi grafica che stabilisce la relazione tra settimane di gestazione e anni
-#della madre, c'è anche il test Anova che restituisce un p-value molto piccolo (2.2e-16), il che ci 
-#induce ad accettare l'ipotesi per cui il peso del neonato vari a seconda delle settimane di gestazione
+model_weight_gestation <- lm(Peso~Gestazione, newborns)
+result_Anova_gest=Anova(model_weight_gestation)
+print(result_Anova_gest)
 
+#by graphically correlating the weeks of gestation with the weight, let's see
+#as the weeks of gestation increase, the weight of the newborn grows, the weight
+#median is always greater as the weeks increase. There do not seem to be substantial ones
+#weight differences between natural and cesarean births. Premature births all happen
+#naturally up to 30 weeks
+#Confirming the graphic analysis that establishes the relationship between weeks of gestation and years
+#of the mother, there is also the Anova test which returns a very small p-value (2.2e-16), which gives us
+#leads us to accept the hypothesis that the weight of the newborn varies depending on the weeks of gestation
 #-----------------------------------------------------------------------------------------------------------------
 #4)
-#IPOTESI DI UGUAGLIANZA TRA MEDIA CAMPIONARIA E DELLA POPOLAZIONE 
+# HYPOTHESIS OF EQUALITY BETWEEN SAMPLE AND POPULATION AVERAGE
 shapiro.test(Peso)
-t.test(Peso, mu=3284)     #p-value=0.986 accettiamo l'ipotesi nulla di uguaglianza tra medie
-t.test(Lunghezza, mu=494) #p-value=0.186 accettiamo l'ipotesi nulla di uguaglianza tra medie
+t.test(Peso, mu=3284)     #p-value=0.986 we accept the null hypothesis of equality between means
 
-#Non avendo la media del peso e della lunghezza della popolazione, usiamo la media
-#campionaria
+t.test(Lunghezza, mu=494) #p-value=0.186 we accept the null hypothesis of equality between means
 
+#Not having the average weight and length of the population, we use the average sample
 
 #--------------------------------------------------------------------------------------------------------------------------
 #5)
-#DIFFERENZE TRA I DUE SESSI
-ggplot(neonati, aes(x = factor(Sesso), y = Peso)) +
+#DIFFERENCES BETWEEN THE TWO GENDERS
+ggplot(newborns, aes(x = factor(Sesso), y = Peso)) +
   geom_boxplot()+
-  xlab("Sesso") +
-  ylab("Peso dei neonati in grammi") +
-  ggtitle("Relazione tra peso dei neonati e sesso")
+  xlab("Gender") +
+  ylab("Newborn's weight in grams") +
+  ggtitle("Relation weight-gender")
 
-pesi_maschi <- subset(neonati, Sesso == "M")$Peso
-media_pesi_maschi <- mean(pesi_maschi)  #3408.49
-sd_pesi_maschi = sd(pesi_maschi)        #493.9
-var(pesi_maschi)
+male_weight <- subset(newborns, Sesso == "M")$Peso
+average_male_weight <- mean(male_weight)  #3408.49
+sd_male_weight = sd(male_weight)        #493.9
+var(male_weight)
 
-pesi_femmine=subset(neonati, Sesso=="F")$Peso
-media_pesi_femmine=mean(pesi_femmine)          #3161.06
-sd_pesi_femmine=sd(pesi_femmine)               #526.51
-var((pesi_femmine))
+female_weight=subset(newborns, Sesso=="F")$Peso
+average_female_weight=mean(female_weight)          #3161.06
+sd_femalei_weight=sd(female_weight)               #526.51
+var((female_weight))
 
-t.test(Peso ~ Sesso, data = neonati, var.equal = F)   #p-value=2.2e-16
+t.test(Peso ~ Sesso, data = newborns, var.equal = F)   #p-value=2.2e-16
 
-#facendo il t.test per la lunghezza tra maschi e femmine, il p-value risulta essere pari a 2.2e-16,
-#un valore molto basso che ci fa rifiutare l'ipotesi nulla di uguaglianza tra medie. Pertanto possiamo
-#dire che le medie dei pesi di maschi e femmine sono significativamente diverse
+#doing the t-test for the length between males and females, the p-value turns out to be equal to 2.2e-16,
+#a very low value that makes us reject the null hypothesis of equality between means. Therefore we can
+#say that the average weights of males and females are significantly different
 
-t.test(Lunghezza~Sesso, data = neonati, var.equal=F)     #p-value=2.2e-16
-ggplot(neonati, aes(x = factor(Sesso), y = Lunghezza)) +
+
+t.test(Lunghezza~Sesso, data = newborns, var.equal=F)     #p-value=2.2e-16
+ggplot(newborns, aes(x = factor(Sesso), y = Lunghezza)) +
   geom_boxplot()+
-  xlab("Sesso") +
-  ylab("Lunghezza dei neonati in mm") +
-  ggtitle("Relazione tra Lunghezza dei neonati e sesso")
-#anche per la lunghezza dei neonati il p-value del test t risulta essere molto piccolo, quindi le medie
-#per della lunghezza per maschi e femmine sono significatimente diverse
+  xlab("Gender") +
+  ylab("Newborn's Length in mm") +
+  ggtitle("Relation Length - Gender")
+#also for the length of newborns the p-value of the t-test turns out to be very small, hence the averages
+#for length for males and females are significantly different
 
-t.test(Cranio~Sesso, data = neonati, var.equal=F)       #p-value=1.414e-13
- ggplot(neonati, aes(x = factor(Sesso), y = Cranio)) +
+t.test(Cranio~Sesso, data = newborns, var.equal=F)       #p-value=1.414e-13
+ ggplot(newborns, aes(x = factor(Sesso), y = Cranio)) +
   geom_boxplot()+
-  xlab("Sesso") +
-  ylab("diametro del cranio in mm") +
-  ggtitle("Relazione tra diametro del cranio dei neonati e sesso")
+  xlab("Gender") +
+  ylab("Skull diameter in mm") +
+  ggtitle("Relation Skull diameter - Gender")
 
-#Anche le medie del diametro dei crani di maschi e femmine risultano essere significativamente diverse
+#The average diameters of the skulls of males and females are also significantly different
 
- 
 #--------------------------------------------------------------------------------------------------------------------
 
 #6) 
-#TABELLA E GRAFICO DI FREQUENZE NATI CON PARTO CESAREO E NATURALE PER OSPEDALE
-tabella_frequenze_parto <- table(neonati$Tipo.parto, neonati$Ospedale)
+#TABLE AND GRAPH OF FREQUENCY BORN WITH CESAREAN AND NATURAL DELIVERY BY HOSPITAL
 
-View(tabella_frequenze_parto)
+frequency_birth_table <- table(newborns$Tipo.parto, newborns$Ospedale)
 
-distr_freq_tipo.parto=as.data.frame(tabella_frequenze_parto)
-colnames(distr_freq_tipo.parto) <- c("Tipo.parto", "Ospedale", "Frequenze")
+View(frequency_birth_table)
+
+distr_freq_birth_type=as.data.frame(frequency_birth_table)
+colnames(distr_freq_birth_type) <- c("Birth.type", "Hospital", "Frequences")
 
 
 
-#tabella pivot con tidyverse per aggregare meglio i dati
-tabella_tipo_parto <- distr_freq_tipo.parto %>%
-  pivot_wider(names_from = Ospedale, values_from = Frequenze)
+#pivottable with tidyverse to better aggregate data
+birth_type_table <- distr_freq_birth_type %>%
+  pivot_wider(names_from = Hospital, values_from = Frequences)
 
-rownames(tabella_tipo_parto) <- c("Naturale", "Cesareo")
+rownames(birth_type_table) <- c("Natural", "Caesarean")
 
-#grafico a barre affiancate delle freq.assolute di parti cesarei e naturali per ospedale
+#side-by-side bar graph of the absolute frequencies of cesarean and natural deliveries by hospital
 
 x11()
 ggplot(data=distr_freq_tipo.parto) +
-  geom_bar(aes(x = Ospedale, y=Frequenze, fill=Tipo.parto),
+  geom_bar(aes(x = Hospital, y=Frequences, fill=Birth.type),
            stat = "identity", position = "dodge") +
-           labs(x = "Ospedale", y = "Frequenze", fill = "Tipo di Parto") +
+           labs(x = "Hospital", y = "Frequences", fill = "Birth type") +
   scale_y_continuous(breaks = seq(0, 2500, 100))+
   theme(panel.spacing = unit(0.3, "cm"),
         legend.position = c(0.1, 0.85),
         legend.direction = "vertical") 
 
-#verifica dell'ipotesi di maggior numero di parti cesarei in alcuni ospedali
-tabella_cesarei <- table(neonati$Tipo.parto=="Ces", neonati$Ospedale)
+#verification of the hypothesis of a greater number of caesarean sections in some hospitals
+table_caesarean <- table(newborns$Tipo.parto=="Ces", newborns$Ospedale)
 
- chisq.test(tabella_cesarei)
+ chisq.test(table_caesarean)
 #Pearson's Chi-squared test
-#data:  tabella_cesarei
+#data:  table_caesarean
 #X-squared = 1.083, df = 2, p-value = 0.5819
  
-# In questo caso, avendo un p-value di 0.5819, che è superiore al consueto livello 
-#di significatività di 0.05, non possiamo rifiutare l'ipotesi nulla. 
-#Ciò suggerisce che non vi sono differenze significative nella proporzione di parti 
-#cesarei tra gli ospedali analizzati, quindi non si può dire che si facciano più parti
- #cesarei in alcuni ospedali
+# In this case, having a p-value of 0.5819, which is higher than the usual level
+#of significance of 0.05, we cannot reject the null hypothesis.
+#This suggests that there is no significant difference in the proportion of parts
+#caesareans among the hospitals analyzed, so it cannot be said that more deliveries are being done
+ #cesarean sections in some hospitals
 
 #---------------------------------------------------------------------------------------------------------
 
-#ANALISI MULTIDIMENSIONALE
+#MULTIDIMENSIONAL ANALYSIS
  
 #1)
-#Indagine sulle variabili in relazione alla variabile risposta peso 
+# Investigation of the variables in relation to the weight response variable
 x11()
 panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor,...)
 {
@@ -324,29 +324,29 @@ panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor,...)
   text(0.8, 0.8, txt, cex = 1.5, cex.labels=1.5)
  }
  
- pairs(neonati, lower.panel = panel.cor, upper.panel = panel.smooth, cex.labels=1.5)
+ pairs(newborns, lower.panel = panel.cor, upper.panel = panel.smooth, cex.labels=1.5)
  
 
-#dalla griglia che mostra i coefficienti di correlazione tra tutte le variabili, vediamo che:
- #- Gli anni della madre non hanno praticamente alcuna correlazione con nessuna delle variabili
- #  quantitative presenti.
+#from the grid showing the correlation coefficients between all the variables, we see that:
+ #- Mother's years have virtually no correlation with any of the variables
+ # quantities present.
  
- #- Anche il numero di gravidanze no ha praticamente alcuna correlazione con le altre variabili
+ #- Even the number of pregnancies has practically no correlation with the other variables
  
- #- Le settimane di gestazione hanno una correlazione positiva con lunghezza, peso e diametro 
- #  del cranio del neonato 
+ #- Weeks of gestation have a positive correlation with length, weight and diameter
+ # of the newborn's skull
  
- #Il peso, oltre che con le settimane di gestazione, ha una correlazione molto positiva con la
- #lunghezze e il diametro del cranio
+ #Weight, as well as with the weeks of gestation, has a very positive correlation with
+ #lengths and diameter of the skull
 
- #Alla fine dell'analisi quindi possiamo dire che le variabili che presentano tutte un forte coefficiente
- #di correlazione sono settimane di gestazione, peso, lunghezza e diametro del cranio, tutte le altre 
- #variabili quantitative non sembrano essere correlate tra loro
- 
- 
- #Analizziamo ora le variabili qualitative:
+ #At the end of the analysis we can therefore say that the variables all present a strong coefficient
+ #of correlation are weeks of gestation, weight, length and diameter of the skull, all the others
+ #quantitative variables do not appear to be correlated with each other
 
-#1 - SESSO
+
+#Let's now analyze the qualitative variables:
+
+#1 - GENDER
 par(mfrow=c(1,2)) 
 boxplot(Peso)
 boxplot(Peso~Sesso)
@@ -358,94 +358,92 @@ t.test(Anni.madre~Sesso) #p-value=0.636
 t.test(Gestazione~Sesso) #p-value=2.096e-11
 t.test(Fumatrici~Sesso)  #p-value=0.51
 t.test(N.gravidanze~Sesso)  #p-value=0.21
-#la variabile sesso mostra un p-value molto basso in relazione a tutte le altre variabili, tranne che con
-#gli anni della madre, con la madre fumatrice o no e con il numero di gravidanze, con cui non sembra
-#esserci un legame.
-#quindi se raffrontata alle variabili quantitative, le differenze tra maschi e 
-#femmine sembrano essere rilevanti, per cui è bene inserire questa variabile nel modello.
+#the gender variable shows a very low p-value in relation to all other variables, except with
+#the mother's years, with the mother smoking or not and with the number of pregnancies, with which it doesn't seem like it
+#there is a connection.
+#so when compared to quantitative variables, the differences between males and
+#females seem to be relevant, so it is good to include this variable in the model.
 
 
-
-#-TIPO DI PARTO
+#-TYPE OF BIRTH
 t.test(Peso~Tipo.parto)
 t.test(Lunghezza~Tipo.parto)
 t.test(Cranio~Tipo.parto) 
 
-#il tipo di parto restituisce un p-value sempre alto con le variabili quantitative, tranne con la Lunghezza
-#ma è molto al limite, ma ad ogni modo non sembra essere una variabili così rilevante in relazione
-#alle altre.
+#the type of birth always returns a high p-value with quantitative variables, except with Length
+#but it's very borderline, but in any case it doesn't seem to be such a relevant variable in relation
+#to the others.
  
-ggplot(neonati, aes(x = factor(Tipo.parto), y = Peso)) +
+ggplot(newborns, aes(x = factor(Tipo.parto), y = Peso)) +
   geom_boxplot()+
   xlab("Tipo di parto") +
   ylab("peso in g") +
-  ggtitle("Relazione tra tipo di parto e peso")
+  ggtitle("Relation birth type - weight")
 
-ggplot(neonati, aes(x = factor(Tipo.parto), y = Lunghezza)) +
+ggplot(newborns, aes(x = factor(Tipo.parto), y = Lunghezza)) +
   geom_boxplot()+
-  xlab("Tipo di parto") +
-  ylab("Lunghezza in mm") +
-  ggtitle("Relazione tra tipo di parto e lunghezza")
+  xlab("Birth type") +
+  ylab("Length in mm") +
+  ggtitle("Relatione birth type - length")
 
 
 #2)
-#Creazione del modello con tutte le variabili
+#Creating the model with all the variables
 
-mod1=lm(Peso~. , data=neonati)
+mod1=lm(Peso~. , data=newborns)
 summary(mod1)
-#dal summary del modello che pone come variabile risposta il peso e come variabili esplicative tutte 
-#le altre variabili a disposizione, vediamo che le variabili che risultano essere molto significative
-#sono le settimane di gestazione, la lunghezza del neonato, il diametro del cranio ed il sesso.
-#Anche il numero di gravidanze  e il tipo di parto sembrano avere una significatività, anche se minore.
-#I beta delle variabili più significative ci dicono che:
 
-#Per ogni mm in più di lunghezza, il peso aumenta di 10.29 g
-#Per ogni mm in più di diametro del cranio, il peso aumenta di 10.47 g
-#Per ogni settimana in più di gestazione, il peso cresce di 32.57 g
-#SessoM con beta di 77.57 indica che nei maschi si rileva un peso di 77.57 g maggiore rispetto alle
-#femmine.
-#per ogni gravidanza in più il peso aumenta di 11.38 g
-#Il peso dei neonati da parto naturale sembra essere maggiore di 29.6 g rispetto a quelli nati da
-#parto cesareo, anche se dall'analisi precedente non risulta esserci una correlazione così forte tra
-#tipo di parto e peso.
+#from the summary of the model which sets the weight as the response variable and all the explanatory variables
+#the other variables available, we see that the variables that turn out to be very significant
+#are the weeks of gestation, the length of the newborn, the diameter of the skull and the sex.
+#The number of pregnancies and the type of birth also seem to have a significance, albeit minor.
+#The betas of the most significant variables tell us that:
 
-#L'R quadro aggiustato del modello è pari a 0.7278, una variabilità spiegata del 73%, che non è male
-#ma il modello può essere migliorato.
+#For every additional mm of length, the weight increases by 10.29 g
+#For every additional mm in diameter of the skull, the weight increases by 10.47 g
+#For each additional week of gestation, the weight increases by 32.57 g
+#SessoM with beta of 77.57 indicates that males weigh 77.57 g greater than females
+#females.
+#for each additional pregnancy the weight increases by 11.38 g
+#The weight of newborns born naturally appears to be 29.6 g greater than those born from
+#cesarean birth, even if from the previous analysis there does not appear to be such a strong correlation between
+#type of birth and weight.
 
+#The adjusted R-squared of the model is 0.7278, an explained variability of 73%, which is not bad
+#but the model can be improved.
 
 
 #3)
-#Ricerca del modello migliore
-
-#Procediamo passo passo:
+#Search for the best model
 
 mod2=update(mod1, ~.-Ospedale)
 summary(mod2)
-#nel modello 2 la variabile "fumatrici" continua ad essere poco significativa, ma per il resto non 
-#è cambiato molto
+#in model 2 the variable "smokers" continues to be insignificant, but otherwise not
+#a lot has changed
 
-anova(mod1, mod2) #il test anova ha un p-value di 0.1036, il che ci dice che l'informazione che 
-                  #abbiamo rimosso, ossia ospedale, potrebbe apportare una informazione importante
-BIC(mod1, mod2)   #tuttavia il BIC risulta inferiore nel modello 2, il che ci porterebbe a preferirlo
-AIC(mod1, mod2)   #l'AIC invece è inferiore nel modello 1
-car::vif(mod2)    #tutti i VIF sono al di sotto di 5, quindi non c'è problema di multicollinearità
+anova(mod1, mod2) #the anova test has a p-value of 0.1036, which tells us that the information
+                  #we removed, i.e. hospital, could provide important information
+BIC(mod1, mod2)   #however the BIC is lower in model 2, which would lead us to prefer it
+AIC(mod1, mod2)   #the AIC, however, is lower in model 1
+car::vif(mod2)    #all VIFs are below 5, so there is no multicollinearity problem
 
 
 mod3=update(mod2, ~.-Fumatrici)
 summary(mod3)
-anova(mod2,mod3)        #il p-value è di 0.25, non c'è 
-BIC(mod1, mod2, mod3)   #il BIC più basso è del modello 3
-AIC(mod1, mod2, mod3)   #l'AIC continua ad essere più basso nel modello 1 e uguale negli altri due
-#l'R quadro rimane invariato 
-car::vif(mod3)          #anche qui i vif sono tutti al di sontto di 5
+anova(mod2,mod3)         
+BIC(mod1, mod2, mod3)   #the lowest BIC is model 3
+AIC(mod1, mod2, mod3)   #the AIC continues to be lower in model 1 and the same in the other two
+#the R square remains unchanged
+car::vif(mod3)          #here too the vifs are all below 5
+
 
 mod4=update(mod3, ~.-Anni.madre)
 summary(mod4)
-anova(mod3, mod4)   #test anova ha un p-value di 0.44, la variabile anni della madre dunque potrebbe
-                    #non aggiungere un'informazione rilevante
-BIC(mod1,mod2,mod3,mod4)  #il BIC del modello 4 è il più basso
-AIC(mod1,mod2,mod3,mod4)  #anche il AIC del modello 4 si abbassa rispetto al 2 e al 3
-vif(mod4)                 #vif tutti sotto 5
+anova(mod3, mod4)   #anova test has a p-value of 0.44, the variable mother's years could therefore
+                    #do not add relevant information
+BIC(mod1,mod2,mod3,mod4)  #the BIC of model 4 is the lowest
+AIC(mod1,mod2,mod3,mod4)  #the AIC of model 4 is also lower than that of 2 and 3
+vif(mod4)                 #vif all below 5
 
 
 mod5=update(mod4,~.-Tipo.parto)
@@ -455,47 +453,47 @@ BIC(mod1,mod2,mod3,mod4,mod5)
 AIC(mod1,mod2,mod3,mod4,mod5)
 vif(mod5)
 
-#il modello prescelto è il numero 5
-#mod5=Peso ~ N.gravidanze + Gestazione + Lunghezza + Cranio + Sesso)
-#L'output rappresenta i risultati della regressione lineare adattata al Modello 5.
-#La colonna "Estimate" fornisce le stime dei coefficienti di regressione per ogni variabile predittiva 
-#nel modello. Ad esempio, l'intercetta è stimata a -6681.7251, il coefficiente di "N.gravidanze" è stimato
-#a 12.4554, il coefficiente di "Gestazione" è stimato a 32.3827, il coefficiente di "Lunghezza" è stimato
-#a 10.2455, il coefficiente di "Cranio" è stimato a 10.5410 e il coefficiente di "SessoM" è stimato a 77.9807.
-#La colonna "Std. Error" rappresenta l'errore standard delle stime dei coefficienti, che misura la loro 
-#precisione.
-#La colonna "t value" indica il valore t calcolato per testare l'ipotesi che il coefficiente sia uguale 
-#a zero.
-#La colonna "Pr(>|t|)" fornisce il p-value associato al test t, che misura la significatività statistica 
-#del coefficiente.
-#I coefficienti delle variabili "N.gravidanze", "Gestazione", "Lunghezza", "Cranio" e "SessoM" sono tutti 
-#statisticamente significativi, poiché i loro p-value sono inferiori a 0.05.
-#Il "Residual standard error" rappresenta l'errore residuo standard, che fornisce una stima della 
-#deviazione standard dei residui.
-#Il "Multiple R-squared" rappresenta la proporzione di varianza totale della variabile di risposta 
-#spiegata dal modello. In questo caso è 0.727, il che indica che il modello spiega circa il 72.7% della 
-#variazione nella variabile di risposta.
-#L' "Adjusted R-squared" tiene conto del numero di predittori nel modello e fornisce una misura di 
-#adattamento del modello considerando anche la complessità del modello.
-#Infine, il "F-statistic" è il valore F calcolato per testare l'ipotesi nulla che tutti i coefficienti 
-#di regressione siano nulli. Il p-value associato al F-statistic è molto piccolo (p-value < 2.2e-16),
-#il che indica che il modello nel suo complesso è statisticamente significativo.
-#In sintesi, i risultati indicano che il Modello 5 è statisticamente significativo e spiega in modo 
-#significativo la variazione nella variabile di risposta "Peso" in base alle variabili predittive 
-#incluse nel modello.
+#the chosen model is number 5
+#mod5=Weight ~ No. of pregnancies + Gestation + Length + Skull + Sex)
+#The output represents the results of the linear regression fitted to Model 5.
+#The "Estimate" column provides estimates of the regression coefficients for each predictor variable
+#in the model. For example, the intercept is estimated at -6681.7251, the coefficient of "N.pregnancies" is estimated
+#at 12.4554, the coefficient of "Gestation" is estimated at 32.3827, the coefficient of "Length" is estimated
+#at 10.2455, the coefficient of "Skull" is estimated at 10.5410 and the coefficient of "SexM" is estimated at 77.9807.
+#The "Std. Error" column represents the standard error of the coefficient estimates, which measures their
+#precision.
+#The "t value" column indicates the t value calculated to test the hypothesis that the coefficient is equal
+#to zero.
+#The "Pr(>|t|)" column provides the p-value associated with the t-test, which measures statistical significance
+#of the coefficient.
+#The coefficients of the variables "No. of pregnancies", "Gestation", "Length", "Skull" and "SexM" are all
+#statistically significant, since their p-values ​​are less than 0.05.
+#The "Residual standard error" represents the residual standard error, which provides an estimate of the
+#standard deviation of residuals.
+#The "Multiple R-squared" represents the proportion of total variance of the response variable
+#explained by the model. In this case it is 0.727, which indicates that the model explains approximately 72.7% of the
+#change in response variable.
+#The "Adjusted R-squared" takes into account the number of predictors in the model and provides a measure of
+#adaptation of the model also considering the complexity of the model.
+#Finally, the "F-statistic" is the F value calculated to test the null hypothesis that all coefficients
+#of regression are zero. The p-value associated with the F-statistic is very small (p-value < 2.2e-16),
+#which indicates that the model as a whole is statistically significant.
+#In summary, the results indicate that Model 5 is statistically significant and explains well
+The change in the "Weight" response variable based on the predictor variables is significant
+#included in the model.
 
 
-#vediamo ora di trovare il modello migliore col pacchetto MASS
+#best model with package MASS
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#utilizziamo il pacchetto MASS per ricercare il modello col metodo stepwise
+# stepwise method
 stepwise.mod=MASS::stepAIC(mod1,
                            direction = "both",
                            k=2)
 
 summary(stepwise.mod)
 anova( mod5, stepwise.mod)
-BIC(mod1,mod2,mod3,mod4,mod5,stepwise.mod)  #il modello 5 ha il BIC più basso
-AIC(mod1,mod2,mod3,mod4,mod5, stepwise.mod)  #il modello stepwise.mod ha l'AIC più basso
+BIC(mod1,mod2,mod3,mod4,mod5,stepwise.mod)  #model 5 has lowest BIC 
+AIC(mod1,mod2,mod3,mod4,mod5, stepwise.mod)  #model stepwise.mod has lowest AIC
 
 par(mfrow=c(2,2))
 
@@ -514,169 +512,169 @@ plot(rstudent(stepwise.mod))
 abline(h=c(-2,2), col="red")
 outlierTest(stepwise.mod)
 vif(stepwise.mod)
-#IL METODO stepwise di MASS ci restituisce questo modello:
-#PESO=N.GRAVIDANZE+GESTAZIONE+LUNGHEZZA+CRANIO+TIPO PARTO+OSPEDALE+SESSO
-#il BIC più basso continua ad essere quello del modello 5, mentre il modello stepwise.mod ha l'AIC 
-#migliore.
-#i vif sono anche qui tutti sotto la soglia di 5.
-#nel test anova il p-value il p-value è molto basso (0.001405), il che suggerisce che 
-#l'aggiunta delle variabili predittive nel Modello 2 è statisticamente significativa e migliora 
-#significativamente la capacità del modello di spiegare la variazione nella variabile di risposta.
+#MASS's stepwise METHOD gives us this model:
+#WEIGHT=N. OF PREGNANCIES+GESTATION+LENGTH+SKULL+TYPE OF DELIVERY+HOSPITAL+SEX
+#the lowest BIC continues to be that of model 5, while the stepwise.mod model has the AIC
+#improve.
+#vifs are also all below the threshold of 5.
+#in the anova test the p-value the p-value is very low (0.001405), which suggests that
+#the addition of the predictor variables in Model 2 is statistically significant and improves
+#significantly the ability of the model to explain the variation in the response variable.
 
-#IL MODELLO MIGLIORE PER IL TEST ANOVA SEMBRA ESSERE QUELLO INDIVIDUATO DAL PACCHETTO MASS, MA
-#ESSO AGGIUNGE DUE VARIABILI COME IL TIPO DI PARTO E L'OSPEDALE, CHE AVEVAMO VISTO NON AVERE UN LEGAME
-#COSI' FORTE CON IL PESO, INOLTRE NON POSSEDIAMO QUESTE INFORMAZIONI AL FINE DELLA NOSTRA PREVISIONE ED
-#ESSENDO DELLE VARIABILI NON QUANTITATIVE, NON LE AGGIUNGEREI NEL MODELLO, TORNANDO A PREFERIRE IL MODELLO 5
+#THE BEST MODEL FOR THE ANOVA TEST SEEMS TO BE THE ONE IDENTIFIED BY THE MASS PACKAGE, BUT
+#IT ADDS TWO VARIABLES SUCH AS THE TYPE OF DELIVERY AND THE HOSPITAL, WHICH WE HAD SEEN NOT TO HAVE A LINK
+#SO STRONG WITH THE WEIGHT, ALSO WE DO NOT HAVE THIS INFORMATION FOR THE PURPOSE OF OUR PREDICTION AND
+#SINCE THE VARIABLES ARE NON-QUANTITATIVE, I WOULD NOT ADD THEM INTO THE MODEL, GOING BACK TO PREFERRING MODEL 5
+
+
 #--------------------------------------------------------------------------------------------------------
 
 
 #4)
-#Presenza di interazioni ed effetti non lineari
+#Presence of interactions and non-linear effects
 
-interazioni=lm(Peso ~ N.gravidanze + Gestazione + Lunghezza + Cranio + Sesso + Gestazione*Lunghezza, data = neonati)
-summary(interazioni)
-#Aggiungendo l'interazione tra Gestazione e Lunghezza, quest'ultima perde di 
-#significatività, quindi questa interazione non va aggiunta al modello.
+interactions=lm(Peso ~ N.gravidanze + Gestazione + Lunghezza + Cranio + Sesso + Gestazione*Lunghezza, data = newborns)
+summary(interactions)
+#By adding the interaction between Gestation and Length, the latter loses
+#significance, so this interaction should not be added to the model.
 
-interazione2=lm(Peso~N.gravidanze+Gestazione+Lunghezza+Cranio+Sesso+Cranio*Lunghezza, data = neonati)
-summary(interazione2)
-#Anche aggiungendo l'interazione tra Lunghezza e Cranio la Lunghezza perde di 
-#significatività
+interaction2=lm(Peso~N.gravidanze+Gestazione+Lunghezza+Cranio+Sesso+Cranio*Lunghezza, data = neonati)
+summary(interaction2)
+#Even adding the interaction between Length and Skull the Length loses
+#significance
 
-#Si possono fare anche analisi grafiche tra la variabile risposta Peso e le variabili
-#indipendenti del modello
+#Graphical analyzes can also be done between the Weight response variable and the variables
+#independent of the model
 par(mfrow=c(2,3))
-plot(neonati$Gestazione, neonati$Peso, xlab = "Gestazione", ylab = "Peso", main = "Grafico di dispersione Gestazione-Peso")
-plot(neonati$Lunghezza, neonati$Peso, xlab = "Lunghezza", ylab = "Peso", main = "Grafico di dispersione Lunghezza-Peso")
-plot(neonati$N.gravidanze, neonati$Peso, xlab = "N.gravidanze", ylab = "Peso", main = "Grafico di dispersione N.gravidanze-Peso")
-plot(neonati$Sesso, neonati$Peso, xlab = "Sesso", ylab = "Peso", main = "Grafico di dispersione Sesso-Peso")
-plot(neonati$Cranio, neonati$Peso, xlab = "Cranio", ylab = "Peso", main = "Grafico di dispersione Cranio-Peso")
+plot(newborns$Gestazione, newborns$Peso, xlab = "Gestation", ylab = "Weight", main = "Scatterplot Gestation-Weight")
+plot(newborns$Lunghezza, newborns$Peso, xlab = "Length", ylab = "Weight", main = "Scatterplot Length-Weight")
+plot(newborns$N.gravidanze, newborns$Peso, xlab = "N.pregnancies", ylab = "Weight", main = "Scatterplot N.pregnancies-Weight")
+plot(newborns$Sesso, newborns$Peso, xlab = "Gender", ylab = "Weight", main = "Scatterplot Gender-Weight")
+plot(newborns$Cranio, newborns$Peso, xlab = "Skull", ylab = "Weight", main = "Scatterplot Skull-Weight")
 
-#Dai grafici che relazionano le variabili indipendenti con la variabile risposta, sembrano 
-#esserci dei pattern regolari, quindi non sembrano esserci effetti non lineari.
+#From the graphs that relate the independent variables to the response variable, they appear
+There are regular patterns, so there don't seem to be any non-linear effects.
 
-modello_interazioni<- lm(Peso ~ N.gravidanze + poly(Gestazione, 2) + poly(Lunghezza, 3) + Cranio + Sesso + Gestazione:Lunghezza, data = neonati)
-summary(modello_interazioni)
-
-
-
-
+interactions_model<- lm(Peso ~ N.gravidanze + poly(Gestazione, 2) + poly(Lunghezza, 3) + Cranio + Sesso + Gestazione:Lunghezza, data = newborns)
+summary(interactions_model)
 
 
 #-------------------------------------------------------------------------------------------------------------------
 #5)
-#Analisi dei residui
+#Residuals analysis
 
 par(mfrow=c(2,2))
 
 plot(mod5)
-#Dal grafico del modello vediamo che nel primo grafico i punti si disperdono causualmente attorno
-#alla media di zero. Nel secondo grafico i residui seguono la bisettrice quindi sono distribuiti
-#normalmente. Il terzo grafico non segue un pattern preciso, quindi tutti i requisiti per i residui
-#sembrano essere rispettati.
-#Nell'ultimo grafico in cui vengono mostrati i potenziali valori influenti, solo un'osservazione si
-#trova nell'area compresa tra 0.5 e 1 della distanza di Cook
+#From the model graph we see that in the first graph the points are randomly dispersed around
+#to the average of zero. In the second graph the residuals follow the bisector and are therefore distributed
+#normally. The third graph does not follow a precise pattern, hence all the requirements for the residuals
+#they seem to be respected.
+#In the last graph where the potential influential values ​​are shown, just one observation yes
+#finds in the area between 0.5 and 1 of the Cook distance
 
-#valori leverage
+#leverage values
 lev=hatvalues(mod5)
 plot(lev)
 p=sum(lev)
 n=nrow(neonati)
-soglia=2*p/n
-abline(h=soglia, col="red")
+theshold=2*p/n
+abline(h=theshold, col="red")
 
-lev[lev>soglia]
+lev[lev>theshold]
 
-#valori outliers
+#outliers
 plot(rstudent(mod5))
 abline(h=c(-2,2), col="red")
 outlierTest(mod5)
-#ci sono tre valori outliers, e sono le registrazioni numero 1551, 155 e 1306
+#there are three outlier values, and they are recordings number 1551, 155 and 1306
 
-#distanza di cook
+#Cook distance
 cook=cooks.distance(mod4)
 plot(cook)
 max(cook)
-#l'unico valore anomalo è riportato dall'osservazione numero 1551, che se allontana dalla distanza
-#di Cook, quindi torniamo all'inizio e rimuoviamo questa riga dai dati
+#the only anomalous value is reported by observation number 1551, which moves away from the distance Cook's 
+#so let's go back to the beginning and remove this row from the data
 
-bptest(mod5)      #p-value di 2.2e-16, quindi c'è omoschedasticità (0.045 dopo la rimozione outliers)
-dwtest(mod5)      #il p-value è 0.1209, non c'è un problema di autocorrelazione
-shapiro.test(residuals(mod5))  #il p-value è 2.2e-16, quindi non c'è normalità dei residui
+bptest(mod5)      #p-value of 2.2e-16, so there is homoscedasticity (0.045 after removing outliers)
+dwtest(mod5)      #the p-value is 0.1209, there is no autocorrelation problem
+shapiro.test(residuals(mod5))  #the p-value is 2.2e-16, so there is no normality of the residuals
 plot(density(residuals(mod5)))
 qqnorm(residuals(mod5))
 qqline(residuals(mod5))
 plot(density(residuals(mod5)))
 mean(residuals(mod5))
-#dai grafici dei residui, essi sembrano distribuirsi normalmente, sia dalla densità dei residui, che hanno
-#una media praticamente di zero (1.56415e-14). Anche dal Q-Q plot essi sembrano seguire la bisettrice
-#e dunque una distribuzione normale.
-#Dopo aver rimosso la riga 1551 che conteneva outliers, il test di omoschedasticità rifiuta sempre l'ipotesi
-#nulla, ma lo fa con un valore del p-value poco al di sotto della soglia del 5%. L'autocorrelazione è assente
-#e nonostante il test Shapiro rifiuto l'ipotesi di normalità, l'analisi grafica sembra suggerire la normalità
-#della distribuzione dei residui, con media vicinissima allo zero
-
+#from the plots of the residuals, they appear to be normally distributed, both from the density of the residuals, which they have
+#an average of practically zero (1.56415e-14). Even from the Q-Q plot they appear to follow the bisector
+#and therefore a normal distribution.
+#After removing row 1551 that contained outliers, the homoscedasticity test always rejects the hypothesis
+#nothing, but it does so with a p-value just below the 5% threshold. Autocorrelation is absent
+#and despite the Shapiro test I reject the hypothesis of normality, the graphical analysis seems to suggest normality
+#of the distribution of residuals, with a mean very close to zero
 
 #--------------------------------------------------------------------------------------------------------------------------
 
 #6)
-#Bontà del modello
+#Goodness of the model
 summary(mod5)
 
-#L'R quadro aggiustato del modello prescelto è pari a 0.736, dunque una variabilità spiegata del 73.6%.
-#Dopo aver rimosso la riga presentante valori outliers, l'analisi dei residui ha un bptest con p-value
-#pari a 0.045, quindi molto vicino alla soglia del 5%, e più accettabile rispetto al dataframe 
-#contenente la riga con outliers che supera la distanza di Cook. Non c'è autocorrelazione e nonostante lo
-#Shapiro test rifiuti l'ipotesi di normalità dei residui, le rappresentazioni grafiche sembrano tutte
-#dimostrare normalità dei residui.
-#l'R-quadrato aggiustato rappresenta la proporzione di varianza nel peso dei neonati spiegata dal modello.
-#In questo caso, l'R-quadrato è 0.7372, il che indica che il modello spiega circa il 73.72% della variazione 
-#nel peso dei neonati.
-#Il test di significatività mostra che tutte le variabili nel modello sono significative in quanto hanno 
-#valori p inferiori al livello di significatività (0.05). 
-#Questo suggerisce che tutte le variabili considerate sono statisticamente significative per spiegare 
-#il peso dei neonati.
-#Il p-value del modello è molto piccolo, quindi nel complesso il modello è significativo
+#The adjusted R square of the chosen model is equal to 0.736, therefore an explained variability of 73.6%.
+#After removing the row presenting outlier values, the residuals analysis has a bptest with p-value
+#equal to 0.045, therefore very close to the 5% threshold, and more acceptable than the dataframe
+#containing the line with outliers that exceeds the Cook distance. There is no autocorrelation and despite it
+#Shapiro test rejects the hypothesis of normality of the residuals, the graphic representations seem all
+#demonstrate normality of the residuals.
+#adjusted R-square represents the proportion of variance in infant weight explained by the model.
+#In this case, the R-squared is 0.7372, which indicates that the model explains approximately 73.72% of the variation
+#in the weight of newborns.
+#The significance test shows that all the variables in the model are significant as they have
+#p values ​​below the significance level (0.05).
+#This suggests that all variables considered are statistically significant to explain
+#the weight of newborns.
+#The p-value of the model is very small, so overall the model is significant
+
 #--------------------------------------------------------------------------------------------------------------------------
 
 #7)
-#Previsione del peso
+#Weight prediction
 
-#Prevediamo il peso di una neonata con la madre alla terza gravidanza alla settimana 39
-#Non avendo a disposizione i dati delle ecografie riguardanti la lunghezza e il diametro del cranio
-#che sono variabili presenti nel modello di regressione, essendo essi valori mancanti a causa della mancata
-#registrazione da parte dell'ecografia di queste misure, calcoliamo una media campionaria di esse per le 
-#femmine alla settimana 39 di gestazione con la madre alla terza gravidanza, così da inserire questi valori
-#nel modello
-lunghezza_femmine_sett_39 <- subset(neonati, Gestazione == 39 & Sesso == "F" & N.gravidanze==3)$Lunghezza
-media_lunghezza_femmine_sett_39=mean(lunghezza_femmine_sett_39)
-
-cranio_femmine_sett_39<- subset(neonati, Gestazione ==39 & Sesso =="F" & N.gravidanze==3)$Cranio
-media_cranio_femmine_sett_39=mean(cranio_femmine_sett_39)
+#Let'spredict the weight of a newborn baby with her mother in her third pregnancy at week 39
+#Not having available ultrasound data regarding the length and diameter of the skull
+#which are variables present in the regression model, being missing values ​​due to missingness
+#recording of these measurements by the ultrasound, we calculate a sample average of them for the
+#females at week 39 of gestation with the mother in her third pregnancy, so as to enter these values
+#in the model
 
 
-previsione=predict(mod5, newdata = data.frame(N.gravidanze=3, 
-                   Lunghezza=media_lunghezza_femmine_sett_39, 
+length_female_week_39 <- subset(newborns, Gestazione == 39 & Sesso == "F" & N.gravidanze==3)$Lunghezza
+average_length_female_week_39=mean(length_female_week_39)
+
+skull_female_week_39<- subset(newborns, Gestazione ==39 & Sesso =="F" & N.gravidanze==3)$Cranio
+average_skull_female_week_39=mean(skull_female_week_39)
+
+
+preidction=predict(mod5, newdata = data.frame(N.gravidanze=3, 
+                   Lunghezza=average_length_female_week_39, 
                    Cranio=media_cranio_femmine_sett_39, 
                    Gestazione=39, Sesso="F"))
 
-previsione    #3225.44
+prediction    #3225.44
 
-#il modello di regressione che abbiamo scelto, tolti i valori outliers, ci indica che la neonata 
-#avente queste caratteristiche peserà 3225.44 grammi
+#the regression model we have chosen, after removing the outlier values, shows us that the newborn
+#having these characteristics it will weigh 3225.44 grams
 #----------------------------------------------------------------------------------------------------------------
 
 #8)
-#Grafici
+#Graphs
 
 
 library(scatterplot3d)
 scatterplot3d(x=Cranio, y=Gestazione, z=Peso, 
               color =  ifelse(Sesso == "M", "blue", "red"), size = 2,
-              type = "h", main = "Grafico 3D del peso del bambino", 
-              xlab = "Cranio", ylab = "Gestazione", 
-              zlab = "Peso")
-legend("bottomright", legend = c("Maschio", "Femmina"), 
+              type = "h", main = " 3D graph newborn weight", 
+              xlab = "Skull", ylab = "Gestation", 
+              zlab = "Weight")
+legend("bottomright", legend = c("Male", "Female"), 
 fill = c("blue", "red"), bty = "n")
 
 
